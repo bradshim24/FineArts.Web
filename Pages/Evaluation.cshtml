@@ -1,0 +1,673 @@
+@page
+@model FineArts.Web.Pages.EvaluationModel
+@{
+    ViewData["Title"] = "Evaluation Form";
+}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+
+    <!-- Page Header -->
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-primary">Fine Arts Evaluation Form</h2>
+      <p class="text-muted mb-0">Oregon Ministry Network &mdash; Evaluator Scoring Sheet</p>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999">
+      <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+          <div class="toast-body fw-semibold" id="successToastMsg">Evaluation submitted successfully!</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+      <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+        <div class="d-flex">
+          <div class="toast-body fw-semibold" id="errorToastMsg">An error occurred.</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    </div>
+
+    <form id="evalForm" novalidate>
+      @Html.AntiForgeryToken()
+
+      <!-- ===== SECTION 1: Participant Selection ===== -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white fw-semibold">
+          Step 1 &mdash; Select Participant
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" for="evaluatorSelect">Evaluator Name <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <select class="form-select" id="evaluatorSelect">
+                  <option value="">-- Select Evaluator --</option>
+                  @foreach (var e in Model.Evaluators)
+                  {
+                    <option value="@e.EvaluatorID">@e.FullName</option>
+                  }
+                </select>
+                <button type="button" class="btn btn-outline-primary" id="addEvaluatorBtn" title="Add new evaluator"
+                        data-bs-toggle="modal" data-bs-target="#addEvaluatorModal">
+                  + Add
+                </button>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" for="divisionSelect">Division <span class="text-danger">*</span></label>
+              <select class="form-select" id="divisionSelect" disabled>
+                <option value="">-- Select Division --</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" for="categorySelect">Category <span class="text-danger">*</span></label>
+              <select class="form-select" id="categorySelect" disabled>
+                <option value="">-- Select Category --</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" for="participantSelect">Participant / Group <span class="text-danger">*</span></label>
+              <select class="form-select" id="participantSelect" disabled>
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="unlistedCheck" />
+                <label class="form-check-label" for="unlistedCheck">
+                  Participant is not listed above (add manually)
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Unlisted Participant Section -->
+          <div id="unlistedSection" class="mt-3 p-3 border rounded bg-light" style="display:none">
+            <h6 class="fw-bold mb-3">Add Unlisted Participant</h6>
+            <div class="row g-3">
+              <div class="col-12 col-sm-4">
+                <label class="form-label" for="unlistedFirst">First Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="unlistedFirst" placeholder="First name" />
+              </div>
+              <div class="col-12 col-sm-4">
+                <label class="form-label" for="unlistedLast">Last Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="unlistedLast" placeholder="Last name" />
+              </div>
+              <div class="col-12 col-sm-4">
+                <label class="form-label" for="unlistedChurch">Church <span class="text-danger">*</span></label>
+                <select class="form-select" id="unlistedChurch">
+                  <option value="">-- Select Church --</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <button type="button" class="btn btn-success" id="addParticipantBtn">Add Participant</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== SECTION 2: Scoring ===== -->
+      <div class="card shadow-sm mb-4" id="scoringSection" style="display:none">
+        <div class="card-header bg-success text-white fw-semibold">
+          Step 2 &mdash; Score the Performance
+        </div>
+        <div class="card-body">
+
+          <!-- No Show -->
+          <div class="alert alert-warning d-flex align-items-center gap-3 mb-4" role="alert">
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="noShowCheck" />
+              <label class="form-check-label fw-semibold" for="noShowCheck">
+                No Show &mdash; Participant did not appear
+              </label>
+            </div>
+          </div>
+
+          <!-- Score Selects -->
+          <div class="row g-4" id="scoreInputs">
+
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="form-label fw-semibold">Selection <small class="text-muted">(max 5)</small></label>
+              <select class="form-select score-select" id="selectionScore" data-max="5">
+                <option value="">--</option>
+                @for (int i = 5; i >= 1; i--)
+                {
+                  <option value="@i">@i</option>
+                }
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="form-label fw-semibold">Communication <small class="text-muted">(max 10)</small></label>
+              <select class="form-select score-select" id="communicationScore" data-max="10">
+                <option value="">--</option>
+                @for (int i = 10; i >= 1; i--)
+                {
+                  <option value="@i">@i</option>
+                }
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="form-label fw-semibold">Presentation <small class="text-muted">(max 15)</small></label>
+              <select class="form-select score-select" id="presentationScore" data-max="15">
+                <option value="">--</option>
+                @for (int i = 15; i >= 1; i--)
+                {
+                  <option value="@i">@i</option>
+                }
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3">
+              <label class="form-label fw-semibold">Ministry Effectiveness <small class="text-muted">(max 10)</small></label>
+              <select class="form-select score-select" id="ministryScore" data-max="10">
+                <option value="">--</option>
+                @for (int i = 10; i >= 1; i--)
+                {
+                  <option value="@i">@i</option>
+                }
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Total Score & Quality Level -->
+          <div class="row g-3 mt-2">
+            <div class="col-12 col-sm-6 col-lg-4">
+              <label class="form-label fw-semibold">Total Score <small class="text-muted">(max 40)</small></label>
+              <div class="input-group">
+                <input type="text" class="form-control fw-bold text-center fs-5" id="totalScore" value="0" readonly />
+                <span class="input-group-text">/40</span>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+              <label class="form-label fw-semibold">Quality Level</label>
+              <input type="text" class="form-control fw-bold text-center" id="qualityLevel" value="--" readonly />
+            </div>
+            <div class="col-12 col-lg-4 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="evaluatorsChoice" />
+                <label class="form-check-label fw-semibold" for="evaluatorsChoice">Evaluator's Choice</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality reference -->
+          <div class="mt-3">
+            <small class="text-muted">
+              Superior: 36&ndash;40 &nbsp;|&nbsp; Excellent: 31&ndash;35 &nbsp;|&nbsp; Good: 26&ndash;30 &nbsp;|&nbsp; Fair: 0&ndash;25
+            </small>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== SECTION 3: Comments ===== -->
+      <div class="card shadow-sm mb-4" id="commentsSection" style="display:none">
+        <div class="card-header bg-secondary text-white fw-semibold">
+          Step 3 &mdash; Comments &amp; Notes
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="comments">
+                Evaluator Comments <span class="text-danger">*</span>
+                <small class="text-muted fw-normal">(minimum 2&ndash;3 sentences)</small>
+              </label>
+              <textarea class="form-control" id="comments" rows="4"
+                        placeholder="Write detailed feedback for the participant..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="violationDesc">
+                Violation Description <small class="text-muted fw-normal">(optional)</small>
+              </label>
+              <textarea class="form-control" id="violationDesc" rows="2"
+                        placeholder="Describe any rule violations, if applicable..."></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap mt-4">
+            <a href="https://drive.google.com/file/d/1kR0eI4xvu0DDRTP9N0xBihae4mqv-_0T/view"
+               target="_blank" class="btn btn-outline-info btn-sm">FAF Rulebook</a>
+            <a href="https://www.merriam-webster.com/thesaurus"
+               target="_blank" class="btn btn-outline-secondary btn-sm">Thesaurus</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Action Buttons ===== -->
+      <div class="d-flex gap-3 flex-wrap mb-5" id="actionButtons" style="display:none!important">
+        <button type="button" class="btn btn-primary btn-lg px-5" id="submitBtn">Submit Evaluation</button>
+        <button type="button" class="btn btn-outline-secondary btn-lg" id="cancelBtn">Cancel / Reset</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ===== Add Evaluator Modal ===== -->
+<div class="modal fade" id="addEvaluatorModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold">Add New Evaluator</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="newEvalFirst" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="newEvalLast" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="newEvalEmail" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">Cell Phone <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" id="newEvalPhone" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">Division <span class="text-danger">*</span></label>
+            <select class="form-select" id="newEvalDivision">
+              <option value="">-- Select Division --</option>
+            </select>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+            <select class="form-select" id="newEvalCategory">
+              <option value="">-- Select Category --</option>
+            </select>
+          </div>
+        </div>
+        <div id="addEvalError" class="alert alert-danger mt-3" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="saveEvaluatorBtn">Save Evaluator</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Duplicate Participant Modal -->
+<div class="modal fade" id="duplicateParticipantModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold">Duplicate Participant</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        This participant is already registered.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+// -- Utility --
+
+function showToast(type, message) {
+    const id = type === 'success' ? 'successToast' : 'errorToast';
+    const msgId = type === 'success' ? 'successToastMsg' : 'errorToastMsg';
+    document.getElementById(msgId).textContent = message;
+    new bootstrap.Toast(document.getElementById(id), { delay: 4000 }).show();
+}
+
+function setSelectOptions(selectEl, items, prompt) {
+    selectEl.innerHTML = `<option value="">${prompt}</option>`;
+    items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.text;
+        selectEl.appendChild(opt);
+    });
+}
+
+async function fetchJSON(url) {
+    const res = await fetch(url);
+    return res.json();
+}
+
+async function postJSON(url, data) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': antiForgeryToken
+        },
+        body: JSON.stringify(data)
+    });
+    return res.json();
+}
+
+// -- Scoring --
+
+function calcTotal() {
+    const sel = parseInt(document.getElementById('selectionScore').value) || 0;
+    const com = parseInt(document.getElementById('communicationScore').value) || 0;
+    const pre = parseInt(document.getElementById('presentationScore').value) || 0;
+    const min = parseInt(document.getElementById('ministryScore').value) || 0;
+    const total = sel + com + pre + min;
+    document.getElementById('totalScore').value = total;
+
+    let level = '--';
+    if (total >= 36) level = 'Superior';
+    else if (total >= 31) level = 'Excellent';
+    else if (total >= 26) level = 'Good';
+    else if (total > 0)  level = 'Fair';
+
+    const ql = document.getElementById('qualityLevel');
+    ql.value = level;
+    ql.className = 'form-control fw-bold text-center ' + {
+        'Superior': 'text-success', 'Excellent': 'text-primary',
+        'Good': 'text-warning', 'Fair': 'text-danger', '--': ''
+    }[level];
+}
+
+document.querySelectorAll('.score-select').forEach(s => s.addEventListener('change', calcTotal));
+
+// -- No Show --
+
+document.getElementById('noShowCheck').addEventListener('change', function () {
+    const disabled = this.checked;
+    document.querySelectorAll('.score-select').forEach(s => {
+        s.disabled = disabled;
+        if (disabled) s.value = '';
+    });
+    if (disabled) {
+        document.getElementById('totalScore').value = 0;
+        document.getElementById('qualityLevel').value = '--';
+        document.getElementById('comments').value = 'Participant did not show.';
+    } else {
+        document.getElementById('comments').value = '';
+    }
+});
+
+// -- Cascade: Evaluator -> Division --
+
+const evaluatorSel = document.getElementById('evaluatorSelect');
+const divisionSel  = document.getElementById('divisionSelect');
+const categorySel  = document.getElementById('categorySelect');
+const participantSel = document.getElementById('participantSelect');
+
+evaluatorSel.addEventListener('change', async function () {
+    divisionSel.innerHTML = '<option value="">-- Select Division --</option>';
+    categorySel.innerHTML  = '<option value="">-- Select Category --</option>';
+    participantSel.innerHTML = '<option value="">-- Select Participant --</option>';
+    divisionSel.disabled = categorySel.disabled = participantSel.disabled = true;
+    hideScoringUI();
+
+    if (!this.value) return;
+    const items = await fetchJSON(`/Evaluation?handler=Divisions&evaluatorId=${this.value}`);
+    setSelectOptions(divisionSel, items, '-- Select Division --');
+    divisionSel.disabled = false;
+});
+
+divisionSel.addEventListener('change', async function () {
+    categorySel.innerHTML = '<option value="">-- Select Category --</option>';
+    participantSel.innerHTML = '<option value="">-- Select Participant --</option>';
+    categorySel.disabled = participantSel.disabled = true;
+    hideScoringUI();
+
+    if (!this.value) return;
+    const evalId = evaluatorSel.value;
+    const items = await fetchJSON(`/Evaluation?handler=Categories&evaluatorId=${evalId}&divisionId=${this.value}`);
+    setSelectOptions(categorySel, items, '-- Select Category --');
+    categorySel.disabled = false;
+});
+
+categorySel.addEventListener('change', async function () {
+    participantSel.innerHTML = '<option value="">-- Select Participant --</option>';
+    participantSel.disabled = true;
+    hideScoringUI();
+
+    if (!this.value) return;
+    const evalId = evaluatorSel.value;
+    const items = await fetchJSON(`/Evaluation?handler=Events&categoryId=${this.value}&evaluatorId=${evalId}`);
+    setSelectOptions(participantSel, items, '-- Select Participant --');
+    participantSel.disabled = false;
+});
+
+participantSel.addEventListener('change', function () {
+    if (this.value) showScoringUI();
+    else hideScoringUI();
+});
+
+function showScoringUI() {
+    document.getElementById('scoringSection').style.display = '';
+    document.getElementById('commentsSection').style.display = '';
+    document.getElementById('actionButtons').style.display = '';
+}
+function hideScoringUI() {
+    document.getElementById('scoringSection').style.display = 'none';
+    document.getElementById('commentsSection').style.display = 'none';
+    document.getElementById('actionButtons').style.display = 'none';
+}
+
+// -- Unlisted Participant --
+
+document.getElementById('unlistedCheck').addEventListener('change', async function () {
+    const section = document.getElementById('unlistedSection');
+    if (this.checked) {
+        section.style.display = '';
+        participantSel.disabled = true;
+        // Load churches if not already loaded
+        const churchSel = document.getElementById('unlistedChurch');
+        if (churchSel.options.length <= 1) {
+            const churches = await fetchJSON('/Evaluation?handler=Churches');
+            setSelectOptions(churchSel, churches, '-- Select Church --');
+        }
+    } else {
+        section.style.display = 'none';
+        participantSel.disabled = !categorySel.value;
+    }
+});
+
+document.getElementById('addParticipantBtn').addEventListener('click', async function () {
+    const first = document.getElementById('unlistedFirst').value.trim();
+    const last  = document.getElementById('unlistedLast').value.trim();
+    const church = document.getElementById('unlistedChurch').value;
+    const catId  = categorySel.value;
+
+    if (!first || !last || !church || !catId) {
+        showToast('error', 'Please fill in all fields and select a category first.');
+        return;
+    }
+
+    const result = await postJSON('/Evaluation?handler=AddParticipant', {
+        firstName: first, lastName: last, churchId: parseInt(church), categoryId: parseInt(catId)
+    });
+
+    if (result.success) {
+        // Add to participant dropdown and select it
+        const opt = new Option(result.displayName, result.eventId, true, true);
+        participantSel.appendChild(opt);
+        participantSel.disabled = false;
+        document.getElementById('unlistedCheck').checked = false;
+        document.getElementById('unlistedSection').style.display = 'none';
+        document.getElementById('unlistedFirst').value = '';
+        document.getElementById('unlistedLast').value = '';
+        document.getElementById('unlistedChurch').value = '';
+        showScoringUI();
+        showToast('success', `${result.displayName} added as participant.`);
+    } else if (result.duplicate) {
+        new bootstrap.Modal(document.getElementById('duplicateParticipantModal')).show();
+    } else {
+        showToast('error', result.error || 'Failed to add participant.');
+    }
+});
+
+// -- Submit Evaluation --
+
+document.getElementById('submitBtn').addEventListener('click', async function () {
+    const noShow = document.getElementById('noShowCheck').checked;
+    const comments = document.getElementById('comments').value.trim();
+
+    if (!evaluatorSel.value || !participantSel.value) {
+        showToast('error', 'Please select an evaluator and participant.');
+        return;
+    }
+    if (!noShow && !comments) {
+        showToast('error', 'Comments are required.');
+        return;
+    }
+    if (!noShow) {
+        const sel = document.getElementById('selectionScore').value;
+        const com = document.getElementById('communicationScore').value;
+        const pre = document.getElementById('presentationScore').value;
+        const min = document.getElementById('ministryScore').value;
+        if (!sel || !com || !pre || !min) {
+            showToast('error', 'Please fill in all four score fields.');
+            return;
+        }
+    }
+
+    this.disabled = true;
+    this.textContent = 'Submitting...';
+
+    const result = await postJSON('/Evaluation?handler=Submit', {
+        evaluatorId: parseInt(evaluatorSel.value),
+        eventId: parseInt(participantSel.value),
+        selectionScore: parseInt(document.getElementById('selectionScore').value) || 0,
+        communicationScore: parseInt(document.getElementById('communicationScore').value) || 0,
+        presentationScore: parseInt(document.getElementById('presentationScore').value) || 0,
+        ministryScore: parseInt(document.getElementById('ministryScore').value) || 0,
+        totalScore: parseInt(document.getElementById('totalScore').value) || 0,
+        isNoShow: noShow,
+        isEvaluatorsChoice: document.getElementById('evaluatorsChoice').checked,
+        comments: comments,
+        violationDescription: document.getElementById('violationDesc').value.trim()
+    });
+
+    this.disabled = false;
+    this.textContent = 'Submit Evaluation';
+
+    if (result.success) {
+        showToast('success', 'Evaluation submitted successfully!');
+        resetForm(true);
+    } else {
+        showToast('error', result.error || 'Submission failed. Please try again.');
+    }
+});
+
+// -- Cancel / Reset --
+
+document.getElementById('cancelBtn').addEventListener('click', () => resetForm(false));
+
+// Resets everything except Evaluator/Division/Category, which stay selected so the
+// evaluator can move straight to the next participant. After a submit, the just-scored
+// participant needs to drop off the list, so the participant options are re-fetched.
+function resetForm(refreshParticipants) {
+    participantSel.value = '';
+    participantSel.disabled = !categorySel.value;
+
+    document.querySelectorAll('.score-select').forEach(s => { s.value = ''; s.disabled = false; });
+    document.getElementById('totalScore').value = 0;
+    document.getElementById('qualityLevel').value = '--';
+    document.getElementById('evaluatorsChoice').checked = false;
+    document.getElementById('noShowCheck').checked = false;
+    document.getElementById('comments').value = '';
+    document.getElementById('violationDesc').value = '';
+    document.getElementById('unlistedCheck').checked = false;
+    document.getElementById('unlistedSection').style.display = 'none';
+    hideScoringUI();
+
+    if (refreshParticipants && categorySel.value) {
+        fetchJSON(`/Evaluation?handler=Events&categoryId=${categorySel.value}&evaluatorId=${evaluatorSel.value}`)
+            .then(items => setSelectOptions(participantSel, items, '-- Select Participant --'));
+    }
+}
+
+// -- Add Evaluator Modal --
+
+const addEvalModal = document.getElementById('addEvaluatorModal');
+addEvalModal.addEventListener('show.bs.modal', async function () {
+    const divSel = document.getElementById('newEvalDivision');
+    if (divSel.options.length <= 1) {
+        const items = await fetchJSON('/Evaluation?handler=AllDivisions');
+        setSelectOptions(divSel, items, '-- Select Division --');
+    }
+    document.getElementById('newEvalFirst').value = '';
+    document.getElementById('newEvalLast').value = '';
+    document.getElementById('newEvalEmail').value = '';
+    document.getElementById('newEvalPhone').value = '';
+    document.getElementById('newEvalDivision').value = '';
+    document.getElementById('newEvalCategory').innerHTML = '<option value="">-- Select Category --</option>';
+    document.getElementById('addEvalError').style.display = 'none';
+});
+
+document.getElementById('newEvalDivision').addEventListener('change', async function () {
+    const catSel = document.getElementById('newEvalCategory');
+    catSel.innerHTML = '<option value="">-- Select Category --</option>';
+    if (!this.value) return;
+    const items = await fetchJSON(`/Evaluation?handler=CategoriesForDivision&divisionId=${this.value}`);
+    setSelectOptions(catSel, items, '-- Select Category --');
+});
+
+document.getElementById('saveEvaluatorBtn').addEventListener('click', async function () {
+    const first = document.getElementById('newEvalFirst').value.trim();
+    const last  = document.getElementById('newEvalLast').value.trim();
+    const email = document.getElementById('newEvalEmail').value.trim();
+    const phone = document.getElementById('newEvalPhone').value.trim();
+    const catId = document.getElementById('newEvalCategory').value;
+    const errDiv = document.getElementById('addEvalError');
+
+    if (!first || !last || !email || !phone || !catId) {
+        errDiv.textContent = 'All fields are required.';
+        errDiv.style.display = '';
+        return;
+    }
+
+    errDiv.style.display = 'none';
+    this.disabled = true;
+
+    const result = await postJSON('/Evaluation?handler=AddEvaluator', {
+        firstName: first, lastName: last, email, cellPhone: phone,
+        categoryIds: [parseInt(catId)]
+    });
+
+    this.disabled = false;
+
+    if (result.success) {
+        // Add to evaluator dropdown, unless this evaluator (matched by email) already has an entry
+        let opt = evaluatorSel.querySelector(`option[value="${result.evaluatorId}"]`);
+        if (!opt) {
+            opt = new Option(result.fullName, result.evaluatorId);
+            evaluatorSel.appendChild(opt);
+        }
+        opt.selected = true;
+        evaluatorSel.dispatchEvent(new Event('change'));
+        bootstrap.Modal.getInstance(addEvalModal).hide();
+        showToast('success', result.wasExisting
+            ? `Category added to existing evaluator ${result.fullName}.`
+            : `Evaluator ${result.fullName} added.`);
+    } else {
+        errDiv.textContent = result.error || 'Failed to add evaluator.';
+        errDiv.style.display = '';
+    }
+});
+</script>
+}

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where npx *)",
+      "Bash(where node *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(cd /tmp)",
+      "Bash(curl -s -c cookies.txt -b cookies.txt \"http://localhost:5000/Evaluation?handler=Churches\")",
+      "Bash(curl -s -c cookies.txt -b cookies.txt \"http://localhost:5000/Evaluation?handler=AllDivisions\")",
+      "Bash(curl -s -c cookies.txt -b cookies.txt \"http://localhost:5000/Evaluation?handler=CategoriesForDivision&divisionId=1\")",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

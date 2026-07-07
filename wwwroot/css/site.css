@@ -1,0 +1,46 @@
+/* Fine Arts Evaluation Form - Custom Styles */
+
+body {
+    background-color: #f4f6fb;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.card {
+    border-radius: 0.75rem;
+}
+
+.card-header {
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    letter-spacing: 0.02em;
+}
+
+.form-select, .form-control {
+    border-radius: 0.5rem;
+}
+
+.btn {
+    border-radius: 0.5rem;
+}
+
+/* Score quality level colors applied via JS */
+#qualityLevel {
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+/* Make score selects visually distinct */
+.score-select {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+}
