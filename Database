@@ -1,1 +1,508 @@
+USE [Fine Arts]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_CalculateTotalScore]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fn_CalculateTotalScore] ( @EvaluatorID INT, @EventID INT ) 
+RETURNS INT AS BEGIN DECLARE @TotalScore INT; SELECT @TotalScore = ISNULL(SUM(ScoreValue), 
+0) FROM EvaluatorEvents WHERE EvaluatorID = @EvaluatorID AND EventID = @EventID;
 
+RETURN @TotalScore; 
+END; 
+
+GO
+/****** Object:  Table [dbo].[Categories]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Categories](
+	[CategoryID] [int] NOT NULL,
+	[DivisionID] [int] NOT NULL,
+	[CategoryName] [varchar](75) NOT NULL,
+	[IsGroupCategory] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CategoryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Churches]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Churches](
+	[ChurchID] [int] NOT NULL,
+	[ChurchName] [varchar](50) NOT NULL,
+	[ContactPerson] [varchar](75) NOT NULL,
+	[ContactEmail] [varchar](50) NOT NULL,
+	[ContactPhone] [nvarchar](50) NOT NULL,
+	[Address] [varchar](50) NOT NULL,
+	[City] [varchar](50) NOT NULL,
+	[State] [varchar](2) NOT NULL,
+	[ZipCode] [varchar](10) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ChurchID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DebugLog]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DebugLog](
+	[DebugID] [int] IDENTITY(1,1) NOT NULL,
+	[ResultID] [int] NULL,
+	[OldScore] [int] NULL,
+	[NewScore] [int] NULL,
+	[Timestamp] [datetime2](7) NULL,
+	[LogMessage] [varchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[DebugID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Divisions]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Divisions](
+	[DivisionID] [int] NOT NULL,
+	[DivisionName] [varchar](50) NOT NULL,
+	[LinkToRules] [varchar](max) NULL,
+	[CategoryID] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[DivisionID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EvaluatorAssignments]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EvaluatorAssignments](
+	[EvaluatorID] [int] NOT NULL,
+	[CategoryID] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EvaluatorID] ASC,
+	[CategoryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EvaluatorEvents]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EvaluatorEvents](
+	[EvaluatorID] [int] NOT NULL,
+	[EventID] [int] NOT NULL,
+	[SelectionScore] [int] NOT NULL,
+	[CommunicationScore] [int] NOT NULL,
+	[PresentationScore] [int] NOT NULL,
+	[MinistryEffectivenessScore] [int] NOT NULL,
+	[ScoreValue] [int] NOT NULL,
+	[Comments] [varchar](max) NOT NULL,
+	[EvaluatorsChoice] [bit] NULL,
+	[NoShow] [bit] NULL,
+	[ViolationDeductions] [int] NULL,
+	[ViolationDescription] [varchar](max) NULL,
+	[OverallEvaluation]  AS (case when [NoShow]=(1) then 'No Show' when [ScoreValue]>=(36) then 'Superior' when [ScoreValue]>=(31) then 'Excellent' when [ScoreValue]>=(26) then 'Good' else 'Fair' end),
+	[InvitationToNationals]  AS (case when [NoShow]=(1) then CONVERT([bit],(0)) when [ScoreValue]>(35) then CONVERT([bit],(1)) else CONVERT([bit],(0)) end),
+	[Finalized] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EvaluatorID] ASC,
+	[EventID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Evaluators]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Evaluators](
+	[EvaluatorID] [int] NOT NULL,
+	[FirstName] [varchar](20) NOT NULL,
+	[LastName] [varchar](20) NOT NULL,
+	[Email] [varchar](50) NOT NULL,
+	[BackgroundCheck] [bit] NOT NULL,
+	[CellPhone] [nvarchar](20) NOT NULL,
+ CONSTRAINT [PK__Evaluato__7AA1AECAA59BCF8E] PRIMARY KEY CLUSTERED 
+(
+	[EvaluatorID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EventRooms]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EventRooms](
+	[RoomNumber] [varchar](50) NOT NULL,
+	[DivisionID] [int] NULL,
+	[MaxCapacity] [int] NULL,
+	[ExtraResource] [varchar](max) NULL,
+	[CategoryID] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[RoomNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EventScoreDeletionLog]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EventScoreDeletionLog](
+	[LogID] [int] IDENTITY(1,1) NOT NULL,
+	[EventScoreID] [int] NULL,
+	[EventID] [int] NOT NULL,
+	[ScoreValue] [int] NOT NULL,
+	[DeletedBy] [nvarchar](255) NOT NULL,
+	[DeletionTimestamp] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[GroupParticipants]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[GroupParticipants](
+	[GroupID] [int] NOT NULL,
+	[ParticipantID] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[GroupID] ASC,
+	[ParticipantID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Groups]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Groups](
+	[GroupID] [int] NOT NULL,
+	[GroupName] [nvarchar](200) NULL,
+	[ChurchID] [int] NOT NULL,
+	[EventID] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[GroupID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ParticipantCategoryMap]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ParticipantCategoryMap](
+	[ParticipantID] [int] NOT NULL,
+	[CategoryID] [int] NOT NULL,
+	[EventID] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ParticipantID] ASC,
+	[CategoryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ParticipantLog]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ParticipantLog](
+	[LogID] [int] IDENTITY(1,1) NOT NULL,
+	[ParticipantID] [int] NULL,
+	[FirstName] [varchar](50) NULL,
+	[LastName] [varchar](50) NULL,
+	[ChurchID] [int] NULL,
+	[TimeStamp] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Participants]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Participants](
+	[ParticipantID] [int] IDENTITY(1,1) NOT NULL,
+	[FirstName] [varchar](20) NOT NULL,
+	[LastName] [varchar](20) NOT NULL,
+	[Email] [varchar](50) NULL,
+	[ChurchID] [int] NOT NULL,
+ CONSTRAINT [PK__Particip__7227997E1103F51F] PRIMARY KEY CLUSTERED 
+(
+	[ParticipantID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ParticipationEvents]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ParticipationEvents](
+	[EventID] [int] IDENTITY(1,1) NOT NULL,
+	[RoomNumber] [varchar](50) NOT NULL,
+	[ParticipantID] [int] NULL,
+	[GroupID] [int] NULL,
+	[CategoryID] [int] NOT NULL,
+	[Time] [time](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EventID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ScoreUpdateLog]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ScoreUpdateLog](
+	[LogID] [int] IDENTITY(1,1) NOT NULL,
+	[ResultID] [int] NOT NULL,
+	[EvaluatorID] [int] NOT NULL,
+	[OldScoreValue] [int] NOT NULL,
+	[NewScoreValue] [int] NOT NULL,
+	[UpdateTimestamp] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Volunteers]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Volunteers](
+	[VolunteerID] [int] NOT NULL,
+	[FirstName] [varchar](20) NOT NULL,
+	[LastName] [varchar](20) NOT NULL,
+	[Role] [varchar](20) NOT NULL,
+	[BackgroundCheck] [bit] NOT NULL,
+	[Email] [varchar](50) NULL,
+	[CellPhone] [nvarchar](20) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[VolunteerID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Categories] ADD  DEFAULT ((0)) FOR [IsGroupCategory]
+GO
+ALTER TABLE [dbo].[Churches] ADD  DEFAULT ('OR') FOR [State]
+GO
+ALTER TABLE [dbo].[DebugLog] ADD  DEFAULT (sysdatetime()) FOR [Timestamp]
+GO
+ALTER TABLE [dbo].[EvaluatorEvents] ADD  DEFAULT ((0)) FOR [Finalized]
+GO
+ALTER TABLE [dbo].[Evaluators] ADD  CONSTRAINT [DF_Evaluators_EvaluatorID]  DEFAULT (NEXT VALUE FOR [EvaluatorVolunteer_Seq]) FOR [EvaluatorID]
+GO
+ALTER TABLE [dbo].[Evaluators] ADD  CONSTRAINT [DF__Evaluator__Backg__47DBAE45]  DEFAULT ((0)) FOR [BackgroundCheck]
+GO
+ALTER TABLE [dbo].[EventScoreDeletionLog] ADD  DEFAULT (sysdatetime()) FOR [DeletionTimestamp]
+GO
+ALTER TABLE [dbo].[Groups] ADD  CONSTRAINT [DF_Groups_GroupID]  DEFAULT (NEXT VALUE FOR [GroupID_Seq]) FOR [GroupID]
+GO
+ALTER TABLE [dbo].[ParticipantLog] ADD  DEFAULT (sysdatetime()) FOR [TimeStamp]
+GO
+ALTER TABLE [dbo].[ScoreUpdateLog] ADD  DEFAULT (sysdatetime()) FOR [UpdateTimestamp]
+GO
+ALTER TABLE [dbo].[Volunteers] ADD  CONSTRAINT [DF_Volunteers_VolunteerID]  DEFAULT (NEXT VALUE FOR [EvaluatorVolunteer_Seq]) FOR [VolunteerID]
+GO
+ALTER TABLE [dbo].[Categories]  WITH CHECK ADD FOREIGN KEY([DivisionID])
+REFERENCES [dbo].[Divisions] ([DivisionID])
+GO
+ALTER TABLE [dbo].[EvaluatorAssignments]  WITH CHECK ADD FOREIGN KEY([CategoryID])
+REFERENCES [dbo].[Categories] ([CategoryID])
+GO
+ALTER TABLE [dbo].[EvaluatorAssignments]  WITH CHECK ADD  CONSTRAINT [FK__Evaluator__Evalu__4AB81AF0] FOREIGN KEY([EvaluatorID])
+REFERENCES [dbo].[Evaluators] ([EvaluatorID])
+GO
+ALTER TABLE [dbo].[EvaluatorAssignments] CHECK CONSTRAINT [FK__Evaluator__Evalu__4AB81AF0]
+GO
+ALTER TABLE [dbo].[EvaluatorEvents]  WITH CHECK ADD  CONSTRAINT [FK__Evaluator__Evalu__4F7CD00D] FOREIGN KEY([EvaluatorID])
+REFERENCES [dbo].[Evaluators] ([EvaluatorID])
+GO
+ALTER TABLE [dbo].[EvaluatorEvents] CHECK CONSTRAINT [FK__Evaluator__Evalu__4F7CD00D]
+GO
+ALTER TABLE [dbo].[EventRooms]  WITH CHECK ADD FOREIGN KEY([DivisionID])
+REFERENCES [dbo].[Divisions] ([DivisionID])
+GO
+ALTER TABLE [dbo].[GroupParticipants]  WITH CHECK ADD FOREIGN KEY([GroupID])
+REFERENCES [dbo].[Groups] ([GroupID])
+GO
+ALTER TABLE [dbo].[GroupParticipants]  WITH CHECK ADD  CONSTRAINT [FK__GroupPart__Parti__6C190EBB] FOREIGN KEY([ParticipantID])
+REFERENCES [dbo].[Participants] ([ParticipantID])
+GO
+ALTER TABLE [dbo].[GroupParticipants] CHECK CONSTRAINT [FK__GroupPart__Parti__6C190EBB]
+GO
+ALTER TABLE [dbo].[ParticipantCategoryMap]  WITH CHECK ADD FOREIGN KEY([CategoryID])
+REFERENCES [dbo].[Categories] ([CategoryID])
+GO
+ALTER TABLE [dbo].[ParticipantCategoryMap]  WITH CHECK ADD  CONSTRAINT [FK__Participa__Parti__74AE54BC] FOREIGN KEY([ParticipantID])
+REFERENCES [dbo].[Participants] ([ParticipantID])
+GO
+ALTER TABLE [dbo].[ParticipantCategoryMap] CHECK CONSTRAINT [FK__Participa__Parti__74AE54BC]
+GO
+ALTER TABLE [dbo].[ParticipantLog]  WITH CHECK ADD FOREIGN KEY([ChurchID])
+REFERENCES [dbo].[Churches] ([ChurchID])
+GO
+ALTER TABLE [dbo].[Participants]  WITH CHECK ADD  CONSTRAINT [FK__Participa__Churc__68487DD7] FOREIGN KEY([ChurchID])
+REFERENCES [dbo].[Churches] ([ChurchID])
+GO
+ALTER TABLE [dbo].[Participants] CHECK CONSTRAINT [FK__Participa__Churc__68487DD7]
+GO
+ALTER TABLE [dbo].[ParticipationEvents]  WITH CHECK ADD FOREIGN KEY([CategoryID])
+REFERENCES [dbo].[Categories] ([CategoryID])
+GO
+ALTER TABLE [dbo].[ParticipationEvents]  WITH CHECK ADD FOREIGN KEY([GroupID])
+REFERENCES [dbo].[Groups] ([GroupID])
+GO
+ALTER TABLE [dbo].[ParticipationEvents]  WITH CHECK ADD  CONSTRAINT [FK__Participa__Parti__7F2BE32F] FOREIGN KEY([ParticipantID])
+REFERENCES [dbo].[Participants] ([ParticipantID])
+GO
+ALTER TABLE [dbo].[ParticipationEvents] CHECK CONSTRAINT [FK__Participa__Parti__7F2BE32F]
+GO
+ALTER TABLE [dbo].[ParticipationEvents]  WITH CHECK ADD FOREIGN KEY([RoomNumber])
+REFERENCES [dbo].[EventRooms] ([RoomNumber])
+GO
+ALTER TABLE [dbo].[EvaluatorEvents]  WITH CHECK ADD CHECK  (([ScoreValue]>=(0) AND [ScoreValue]<=(40)))
+GO
+/****** Object:  StoredProcedure [dbo].[CreateGroupEvent]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[CreateGroupEvent]
+    @GroupID INT,
+    @CategoryID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @EventID INT;
+    DECLARE @RoomNumber VARCHAR(50);
+
+    -- Step 1: Check if an event already exists for this group + category
+    SELECT @EventID = EventID
+    FROM ParticipationEvents
+    WHERE GroupID = @GroupID
+      AND CategoryID = @CategoryID;
+
+    -- Step 2: If no event exists, create one
+    IF @EventID IS NULL
+    BEGIN
+        -- Look up the room assigned to this category
+        SELECT TOP 1 @RoomNumber = RoomNumber
+        FROM EventRooms
+        WHERE CategoryID = @CategoryID;
+
+        -- If no room is assigned, fall back to 'TBD'
+        IF @RoomNumber IS NULL
+            SET @RoomNumber = 'TBD';
+
+        INSERT INTO ParticipationEvents (RoomNumber, GroupID, CategoryID, Time)
+        VALUES (@RoomNumber, @GroupID, @CategoryID, NULL);
+
+        SET @EventID = SCOPE_IDENTITY();
+    END
+
+    -- Step 3: Store this EventID on the Groups table
+    UPDATE Groups
+    SET EventID = @EventID
+    WHERE GroupID = @GroupID;
+
+    -- Step 4: Return the EventID
+    SELECT @EventID AS EventID;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[CreateSoloEvent]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[CreateSoloEvent]
+    @ParticipantID INT,
+    @CategoryID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @EventID INT;
+    DECLARE @RoomNumber VARCHAR(50);
+
+    -- Step 1: Check if an event already exists for this participant + category
+    SELECT @EventID = EventID
+    FROM ParticipationEvents
+    WHERE ParticipantID = @ParticipantID
+      AND CategoryID = @CategoryID;
+
+    -- Step 2: If no event exists, create one
+    IF @EventID IS NULL
+    BEGIN
+        -- Look up the room assigned to this category
+        SELECT TOP 1 @RoomNumber = RoomNumber
+        FROM EventRooms
+        WHERE CategoryID = @CategoryID;
+
+        -- If no room is assigned, fall back to 'TBD'
+        IF @RoomNumber IS NULL
+            SET @RoomNumber = 'TBD';
+
+        INSERT INTO ParticipationEvents (RoomNumber, ParticipantID, CategoryID, Time)
+        VALUES (@RoomNumber, @ParticipantID, @CategoryID, NULL);
+
+        SET @EventID = SCOPE_IDENTITY();
+    END
+
+    -- Step 3: Store this EventID in ParticipantCategoryMap
+    UPDATE ParticipantCategoryMap
+    SET EventID = @EventID
+    WHERE ParticipantID = @ParticipantID
+      AND CategoryID = @CategoryID;
+
+    -- Step 4: Return the EventID
+    SELECT @EventID AS EventID;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[sp_InsertParticipant]    Script Date: 7/7/2026 3:23:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[sp_InsertParticipant] ( @PFirstName VARCHAR(20), @PLastName VARCHAR(20), @PEmail VARCHAR(50), @ChurchID INT ) 
+
+AS BEGIN INSERT INTO Participants (PFirstName, PLastName, PEmail, ChurchID) VALUES (@PFirstName, @PLastName, @PEmail, @ChurchID); 
+
+END; 
+GO
